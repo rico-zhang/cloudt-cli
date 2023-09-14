@@ -1,0 +1,36 @@
+{
+  "name": "@ricozlq/cloudt-cli",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {},
+  "keywords": [
+    "cli",
+    "cloudt",
+    "命令行",
+    "工具"
+  ],
+  "author": "rico-zhang",
+  "license": "MIT",
+  "description": "cloudt命令行工具",
+  "homepage": "https://github.com/rico-zhang/cloudt-cli.git",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rico-zhang/cloudt-cli.git"
+  },
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "commander": "^11.0.0",
+    "download-git-repo": "^3.0.2",
+    "inquirer": "^8.0.0",
+    "log-symbols": "^5.1.0",
+    "ora": "^7.0.1",
+    "shelljs": "^0.8.5"
+  },
+  "bin": {
+    "cloudt-cli": "./index.js"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
