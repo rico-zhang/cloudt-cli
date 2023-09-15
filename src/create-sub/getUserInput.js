@@ -17,6 +17,7 @@ export async function getUserInput() {
   }
   const { devPort } = await getDevPort();
   const { cloudtBranch, stdShareBranch } = await getCloudtStdShareBranch();
+  const { autoNpmInstall } = await getAutoNpmInstall();
   // console.log(
   //   createMode,
   //   projectType,
@@ -26,7 +27,8 @@ export async function getUserInput() {
   //   devPort,
   //   domin,
   //   cloudtBranch,
-  //   stdShareBranch
+  //   stdShareBranch,
+  //   autoNpmInstall;
   // );
   return {
     projectType,
@@ -37,6 +39,7 @@ export async function getUserInput() {
     devPort,
     cloudtBranch,
     stdShareBranch,
+    autoNpmInstall,
   };
 }
 function getCreateMode() {
@@ -48,7 +51,7 @@ function getCreateMode() {
         { value: 'auto', name: '自动 (根据子项目名解析出prefixCls,publicPath等)' },
         { value: 'manu', name: '手动 (可以指定prefixCls,publicPath等)' },
       ],
-      message: '请选择创建模式',
+      message: '请选择创建模式: ',
     },
   ]);
 }
@@ -62,7 +65,7 @@ function getProjectType() {
         { value: 'standard', name: '标产' },
         { value: 'project', name: '项目' },
       ],
-      message: '请选择子项目类型',
+      message: '请选择子项目类型: ',
     },
   ]);
 }
@@ -70,12 +73,15 @@ function getProjectType() {
 function getProjectName(createMode, projectType) {
   const message = `请输入子项目名称,格式为${
     projectType === 'standard' ? 'yst-clout-web-业务域名' : 'yst-项目简称-web-业务域名'
-  },如${projectType === 'standard' ? 'yst-clout-web-support' : 'yst-lm-web-support'}`;
+  },如${projectType === 'standard' ? 'yst-clout-web-support' : 'yst-lm-web-support'}: `;
   return inquirer.prompt([
     {
       type: 'input',
       name: 'projectName',
       message: message,
+      default: () => {
+        return projectType === 'standard' ? 'yst-cloudt-web-' : '';
+      },
       validate: (input) => {
         if (projectType === 'standard') {
           if (createMode === 'auto') {
@@ -120,18 +126,18 @@ function getPrefixClsPublicPath() {
     {
       type: 'input',
       name: 'prefixCls',
-      message: '请输入antd css 前缀;project.config.ts中的prefixCls,如yst-support',
+      message: '请输入antd css 前缀;project.config.ts中的prefixCls,如yst-support: ',
     },
     {
       type: 'input',
       name: 'publicPath',
-      message: '请输入publicPath;build.config.ts中的publicPath,如/support/',
+      message: '请输入publicPath;build.config.ts中的publicPath,如/support/: ',
       validate: (input) => {
         //必须以/开头 /结尾 中间的单词长度为2-10
         const reg = /^\/\w{2,10}\/$/g;
         const result = reg.test(input);
         if (!result) {
-          return 'publicPath必须以/开头 /结尾 中间的单词长度为2-10,如/support/';
+          return 'publicPath必须以/开头 /结尾 中间的单词长度为2-10,如/support/: ';
         }
         return true;
       },
@@ -142,9 +148,15 @@ function getPrefixClsPublicPath() {
 function getDevPort() {
   return inquirer.prompt([
     {
-      type: 'number',
+      type: 'input',
       name: 'devPort',
-      message: '请输入子项目启动的端口号,如3020',
+      message: '请输入子项目启动的端口号,如3020: ',
+      validate: (input) => {
+        if (!input || Number.isNaN(Number(input))) {
+          return '请输入大于0的数字';
+        }
+        return true;
+      },
     },
   ]);
 }
@@ -154,12 +166,23 @@ function getCloudtStdShareBranch() {
     {
       type: 'input',
       name: 'cloudtBranch',
-      message: '请输入cloudt组件库分支名称(自动引入subtree),如果不需要，则直接回车',
+      message: '请输入cloudt组件库分支名称(自动引入subtree),如果不需要，则直接回车: ',
     },
     {
       type: 'input',
       name: 'stdShareBranch',
-      message: '请输入stdShare分支名称(自动引入subtree),如果不需要，则直接回车',
+      message: '请输入stdShare分支名称(自动引入subtree),如果不需要，则直接回车: ',
+    },
+  ]);
+}
+
+function getAutoNpmInstall() {
+  return inquirer.prompt([
+    {
+      type: 'confirm',
+      name: 'autoNpmInstall',
+      message: '自动安装依赖?(y/n): ',
+      default: true,
     },
   ]);
 }

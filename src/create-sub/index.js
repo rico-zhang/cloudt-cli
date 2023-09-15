@@ -27,19 +27,20 @@ function logError(msg) {
 function tryExec(func, params, msg, isLoading = true, isThrow = true) {
   let spinner = null;
   if (isLoading) {
-    spinner = ora({
-      text: msg,
-      isSilent: true,
-    }).start();
+    spinner = ora(msg).start();
   }
   try {
     func.apply(null, params);
+    spinner?.clear();
     logSuccess(`${msg} 成功`);
+    return true;
   } catch (error) {
+    spinner?.clear();
     logError(`${msg} 失败`);
     if (isThrow) {
       throw error;
     }
+    return false;
   } finally {
     if (isLoading) {
       spinner.stop();
@@ -79,7 +80,7 @@ function initGit(projectRootPath) {
 
 function gitSubtreeCloudt(projectRootPath, cloudtBranch) {
   if (cloudtBranch) {
-    const spinner = ora({ text: '添加cloudt组件库', isSilent: true }).start();
+    const spinner = ora('添加cloudt组件库').start();
     try {
       shell.cd(projectRootPath);
       shell.rm('-rf', './src/cloudt'); //防止直接pull冲突 所以先删掉 再add
@@ -88,8 +89,10 @@ function gitSubtreeCloudt(projectRootPath, cloudtBranch) {
       shell.exec(
         `git subtree add --prefix=src/cloudt git@code.elitescloud.com:cloudt-web-suites/cloudt.git ${cloudtBranch} --squash`
       );
+      spinner.clear();
       logSuccess('添加cloudt组件库成功');
     } catch (error) {
+      spinner.clear();
       logError('添加cloudt组件库失败');
       throw error;
     } finally {
@@ -101,14 +104,16 @@ function gitSubtreeCloudt(projectRootPath, cloudtBranch) {
 }
 function gitSubtreeStdShare(projectRootPath, stdShareBranch) {
   if (stdShareBranch) {
-    const spinner = ora({ text: '添加stdShare组件库', isSilent: true }).start();
+    const spinner = ora('添加stdShare组件库').start();
     try {
       shell.cd(projectRootPath);
       shell.exec(
         `git subtree add --prefix=src/std-share git@code.elitescloud.com:el-yst-buzi-std/std-share.git ${stdShareBranch} --squash`
       );
+      spinner.clear();
       logSuccess('添加stdShare组件库成功');
     } catch (error) {
+      spinner.clear();
       logError('添加stdShare组件库失败');
       throw error;
     } finally {
@@ -255,8 +260,17 @@ function clearProject(projectRootPath) {
  * 12. 更改Chart部署文件
  */
 export async function createSub() {
-  const { projectType, domin, projectName, prefixCls, publicPath, devPort, cloudtBranch, stdShareBranch } =
-    await getUserInput();
+  const {
+    projectType,
+    domin,
+    projectName,
+    prefixCls,
+    publicPath,
+    devPort,
+    cloudtBranch,
+    stdShareBranch,
+    autoNpmInstall,
+  } = await getUserInput();
   // const projectType = 'project';
   // const domin = 'support';
   // const projectName = 'yst-cloudt-web-support';
@@ -265,6 +279,7 @@ export async function createSub() {
   // const devPort = 3456;
   // const cloudtBranch = 'stable/3.2.x';
   // const stdShareBranch = 'master';
+  // const autoNpmInstall = true;
   const projectRootPath = path.resolve(getExecPath(), projectName);
   const downloadSuccess = await downloadTemplate(projectName);
   if (downloadSuccess) {
@@ -284,14 +299,22 @@ export async function createSub() {
         '更改启动命令端口号, 更改cloudt命令，添加stdShare命令 (package.json)'
       );
       tryExec(handleChart, [projectRootPath, projectName], '更改Chart部署文件');
-      logSuccess('子项目创建成功');
       createSuccess = true;
     } catch (error) {
       clearProject(projectRootPath);
       console.log(error.message);
     }
     if (createSuccess) {
-      tryExec(npmInstall, [projectRootPath], 'npm install', true, false);
+      let installSuccess = false;
+      if (autoNpmInstall) {
+        installSuccess = tryExec(npmInstall, [projectRootPath], 'npm install', true, false);
+      }
+      logSuccess(`子项目${projectName}创建成功,请执行以下命令启动项目`);
+      console.log(chalk.green(`cd ${projectName}`));
+      if (!installSuccess) {
+        console.log(chalk.green('npm install'));
+      }
+      console.log(chalk.green('npm start'));
     }
   }
 }
